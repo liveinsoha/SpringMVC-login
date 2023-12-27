@@ -2,9 +2,11 @@ package hello.login.web;
 
 import hello.login.domain.member.Member;
 import hello.login.domain.member.MemberRepository;
+import hello.login.web.argumentResolver.Login;
 import hello.login.web.session.SessionConst;
 import hello.login.web.session.SessionManager;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -74,11 +76,22 @@ public class HomeController {
 
 
     /**
-     * 참고로 이 기능은 세션을 생성하지 않는다.
+     * @SessionAttirbute -> 참고로 이 기능은 세션을 생성하지 않는다.
      * 세션 값이 없을 수도 있으니 required는 false이다.
      */
-    @GetMapping("/")
+    //@GetMapping("/")
     public String homeV3Spring(@SessionAttribute(name = SessionConst.LOGIN_MEMBER, required = false) Member loginMember, Model model) {
+        if (loginMember == null) {
+            return "home";
+        }
+
+        log.info("세션 데이터 있다");
+        model.addAttribute("member", loginMember);
+        return "loginHome";
+    }
+
+    @GetMapping("/")
+    public String homeV3ArgumentResolver(@Login Member loginMember, Model model) {
         if (loginMember == null) {
             return "home";
         }

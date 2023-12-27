@@ -84,8 +84,10 @@ public class LoginController {
         return "redirect:/";
     }
 
-    @PostMapping("/login")
+    //@PostMapping("/login")
     public String loginV3(@ModelAttribute @Validated LoginForm form, BindingResult bindingResult, HttpServletRequest request) {
+
+
         if (bindingResult.hasErrors()) {
             log.info("errors = {}", bindingResult);
             return "login/loginForm";
@@ -111,6 +113,36 @@ public class LoginController {
         return "redirect:/";
     }
 
+    @PostMapping("/login")
+    public String loginV4(@ModelAttribute @Validated LoginForm form, BindingResult bindingResult,
+                          @RequestParam(defaultValue = "/")String redirectURL, HttpServletRequest request) {
+//쿼리파라미터가 있는 경우 리다이렉트 하기위해 값을 redirectURL에 저장한다. 쿼리 파라미터가 없다면 홈화면으로 이동하기 위해 기본 값은 "/"이다
+
+        if (bindingResult.hasErrors()) {
+            log.info("errors = {}", bindingResult);
+            return "login/loginForm";
+        }
+
+        Member loginMember = loginService.login(form.getLoginId(), form.getPassword());
+        log.info("login? {}", loginMember);
+
+        if (loginMember == null) {
+            bindingResult.reject("loginFail", "아이디 또는 비밀번호가 일치하지 않습니다");
+            return "login/loginForm";
+        }
+
+        log.info("로그인 성공 = {}", loginMember);
+        //세션이 있으면 있는 세션 반환, 없으면 신규 세션 생성
+        HttpSession session = request.getSession();
+        session.setAttribute(LOGIN_MEMBER, loginMember);
+        /**
+         * 에제라서 Member객체 전부를 담았지만, MemberId정도 간단한 정보만 담는 게 좋다
+         * 세션에는 최소한의 데이터만 보관해야 한다
+         */
+
+        return "redirect:" + redirectURL;
+    }
+
     //@PostMapping("/logout")
     public String logout(HttpServletResponse response) {
         expireCookie(response, "memberId");
@@ -126,7 +158,7 @@ public class LoginController {
 
     @PostMapping("/logout")
     public String logoutV3(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
+        HttpSession session = request.getSession(false); //없으면 새 세션 생성 X
         if (session != null) {
             session.invalidate(); //세션 저장소에 있는 데이터를 버린다.
         }
